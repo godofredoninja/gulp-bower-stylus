@@ -7,7 +7,11 @@ var gulp                = require('gulp'),
 
     // preocesa y comprime archivos de styl a css
     stylus              = require('gulp-stylus'),
-    nib                 = require('nib');
+    nib                 = require('nib'),
+
+    // Busca errores en el JS
+    jshint        = require('gulp-jshint'),
+    stylish       = require('jshint-stylish');
 
 
 
@@ -29,7 +33,7 @@ gulp.task('css', function() {
   gulp.src('./app/stylesheets/main.styl')
   .pipe(stylus({
     use: nib(),
-    compress: false }))
+    compress: true }))
   .pipe(gulp.dest('./app/stylesheets'))
   .pipe(connect.reload());
 });
@@ -41,11 +45,34 @@ gulp.task('html', function() {
   .pipe(connect.reload());
 });
 
+// Busca errores en el JS y nos los muestra por pantalla
+gulp.task('jshint', function() {
+  return gulp.src('./app/scripts/**/*.js')
+  .pipe(jshint('.jshintrc'))
+  .pipe(jshint.reporter('jshint-stylish'))
+  .pipe(jshint.reporter('fail'));
+});
+
 // Vigila cambios que se produzcan en el código
 // y lanza las tareas relacionadas
 gulp.task('watch', function() {
   gulp.watch(['./app/**/*.html'], ['html']);
   gulp.watch(['./app/stylesheets/**/*.styl'], ['css']);
+  gulp.watch(['./app/scripts/**/*.js'], ['jshint']);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 gulp.task('default', ['server', 'watch']);
