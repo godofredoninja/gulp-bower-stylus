@@ -1,0 +1,23 @@
+{
+  "name": "web_agil_godofredo",
+  "version": "0.0.1",
+  "description": "desarrollo de aplicación web Agil con gulp",
+  "bugs": {
+    "url": "",
+    "email": "hello@godofredo.ninja"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "GodoFredo",
+    "email": "hello@godofredo.ninja",
+    "url": "https://godofredo.ninja"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {},
+  "devDependencies": {
+
+  }
+}
