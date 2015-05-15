@@ -5,7 +5,7 @@ var gulp                = require('gulp'),
     connect             = require('gulp-connect'),
     historyApiFallback  = require('connect-history-api-fallback'),
 
-    // preocesa y comprime archivos de styl a css
+    // preocesa y comprime archivos de stylus a css
     stylus              = require('gulp-stylus'),
     nib                 = require('nib'),
 
@@ -15,7 +15,16 @@ var gulp                = require('gulp'),
 
     // Busca errores en el JS
     jshint              = require('gulp-jshint'),
-    stylish             = require('jshint-stylish');
+    stylish             = require('jshint-stylish'),
+
+    // Concatenación de ficheros JS y CSS
+    gulpif              = require('gulp-if'),
+    minifyCss           = require('gulp-minify-css'),
+    useref              = require('gulp-useref'),
+    uglify              = require('gulp-uglify'),
+
+    // css que no utilizaremos
+    uncss               = require('gulp-uncss');
 
 
 
@@ -79,6 +88,54 @@ gulp.task('html', function() {
   .pipe(connect.reload());
 });
 
+
+// Concatenación de ficheros JS y CSS
+gulp.task('compress', function() {
+  gulp.src('./app/index.html')
+  .pipe(useref.assets())
+  .pipe(gulpif('*.js', uglify({mangle: false })))
+  .pipe(gulpif('*.css', minifyCss()))
+  .pipe(gulp.dest('./dist'));
+});
+
+
+// Servidor web en produccion
+gulp.task('produccion-server', function() {
+  connect.server({
+  root: './dist',
+  hostname: 'localhost',
+  port: 5000,
+  livereload: true,
+  middleware: function(connect, opt) {
+      return [ historyApiFallback() ];
+    }
+ });
+});
+
+
+// remover el CSS no utilizado
+gulp.task('uncss', function() {
+  gulp.src('./dist/css/style.min.css')
+  .pipe(uncss({
+    html: ['./app/index.html']
+  }))
+  .pipe(gulpif('*.css', minifyCss({
+    keepSpecialComments:0,
+    keepBreaks:false
+  })))
+  .pipe(gulp.dest('./dist/css'));
+});
+
+// Copia el contenido de los estáticos e index.html al directorio
+// de producción sin tags de comentarios
+gulp.task('copy', function() {
+  gulp.src('./app/index.html')
+  .pipe(useref())
+  .pipe(gulp.dest('./dist'));
+  gulp.src('./app/lib/fontawesome/fonts/**')
+  .pipe(gulp.dest('./dist/fonts'));
+});
+
 // Vigila cambios que se produzcan en el código
 // y lanza las tareas relacionadas
 gulp.task('watch', function() {
@@ -88,5 +145,19 @@ gulp.task('watch', function() {
   gulp.watch(['./bower.json'], ['wiredep']);
 });
 
+// Remplazar la url correcto de las fuentes en el css
+// var replace = require('gulp-replace');
+// gulp.task('replaceurlfont', function(){
+//   gulp.src(['./dist/css/style.min.css'])
+//     .pipe(replace('url(css/', 'url(../'))
+//     .pipe(gulp.dest('./dist/css'));
+// });
 
-gulp.task('default', ['server', 'watch']);
+// por defecto en desarrollo
+gulp.task('default', ['server', 'inject', 'wiredep', 'watch']);
+
+// para produccion
+gulp.task('produccion', ['compress', 'copy']);
+
+// css compress
+gulp.task('csscompress', ['uncss']);
