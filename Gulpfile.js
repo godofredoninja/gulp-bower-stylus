@@ -23,9 +23,12 @@ var gulp                = require('gulp'),
     useref              = require('gulp-useref'),
     uglify              = require('gulp-uglify'),
 
+    // Reducir el peso de las imganes
+    imagemin            = require('gulp-imagemin'),
+    pngcrush            = require('imagemin-pngcrush'),
+
     // css que no utilizaremos
     uncss               = require('gulp-uncss');
-
 
 
 // Servidor web de desarrollo
@@ -50,7 +53,6 @@ gulp.task('css', function() {
   .pipe(gulp.dest('./app/stylesheets'))
   .pipe(connect.reload());
 });
-
 
 // Busca errores en el JS y nos los muestra por pantalla
 gulp.task('jshint', function() {
@@ -81,13 +83,11 @@ gulp.task('wiredep', function () {
   .pipe(gulp.dest('./app'));
 });
 
-
 // Recarga el navegador cuando hay cambios en el HTML
 gulp.task('html', function() {
   gulp.src('./app/**/*.html')
   .pipe(connect.reload());
 });
-
 
 // Concatenación de ficheros JS y CSS
 gulp.task('compress', function() {
@@ -98,9 +98,18 @@ gulp.task('compress', function() {
   .pipe(gulp.dest('./dist'));
 });
 
+// Vigila cambios que se produzcan en el código
+// y lanza las tareas relacionadas
+gulp.task('watch', function() {
+  gulp.watch(['./app/**/*.html'], ['html']);
+  gulp.watch(['./app/stylesheets/**/*.styl'], ['css', 'inject']);
+  gulp.watch(['./app/scripts/**/*.js'], ['jshint', 'inject']);
+  gulp.watch(['./bower.json'], ['wiredep']);
+});
+
 
 // Servidor web en produccion
-gulp.task('produccion-server', function() {
+gulp.task('production-server', function() {
   connect.server({
   root: './dist',
   hostname: 'localhost',
@@ -111,7 +120,6 @@ gulp.task('produccion-server', function() {
     }
  });
 });
-
 
 // remover el CSS no utilizado
 gulp.task('uncss', function() {
@@ -136,28 +144,33 @@ gulp.task('copy', function() {
   .pipe(gulp.dest('./dist/fonts'));
 });
 
-// Vigila cambios que se produzcan en el código
-// y lanza las tareas relacionadas
-gulp.task('watch', function() {
-  gulp.watch(['./app/**/*.html'], ['html']);
-  gulp.watch(['./app/stylesheets/**/*.styl'], ['css', 'inject']);
-  gulp.watch(['./app/scripts/**/*.js'], ['jshint', 'inject']);
-  gulp.watch(['./bower.json'], ['wiredep']);
+// Reduce el peso de las imagenes para produccion
+gulp.task('images', function() {
+  gulp.src('./app/img/**/*.{png,jpg,jpeg,gif,svg}')
+    .pipe(imagemin({
+      progressive: true,
+      svgoPlugins: [{removeViewBox: false}],
+      use: [pngcrush()]
+    }))
+    .pipe(gulp.dest('./dist/img'));
 });
 
+
 // Remplazar la url correcto de las fuentes en el css
-// var replace = require('gulp-replace');
-// gulp.task('replaceurlfont', function(){
-//   gulp.src(['./dist/css/style.min.css'])
-//     .pipe(replace('url(css/', 'url(../'))
-//     .pipe(gulp.dest('./dist/css'));
-// });
+// Utilizar en producción caso contrario que las url de las fuentes estén mal
+var replace = require('gulp-replace');
+gulp.task('font-url', function(){
+  gulp.src(['./dist/css/style.min.css'])
+    .pipe(replace('url(css/', 'url(../'))
+    .pipe(gulp.dest('./dist/css'));
+});
+
 
 // por defecto en desarrollo
 gulp.task('default', ['server', 'inject', 'wiredep', 'watch']);
 
 // para produccion
-gulp.task('produccion', ['compress', 'copy']);
+gulp.task('production', ['compress', 'images', 'copy']);
 
 // css compress
 gulp.task('csscompress', ['uncss']);
