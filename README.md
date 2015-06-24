@@ -74,6 +74,9 @@ $ npm install -g bower
 ```
 ### Development mode
 ```
+$ npm install
+$ bower install
+
 $ gulp
 ```
 Escuchara en el puerto 5000
